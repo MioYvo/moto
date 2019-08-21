@@ -11,6 +11,7 @@ import uvloop
 from tornado.options import define, options, parse_command_line
 
 from Manager.model import DBPool, dbpool
+from Manager.settings import ioloop
 from Manager.urls import urls
 
 define("port", default=8888, help="run on the given port", type=int)
@@ -55,9 +56,7 @@ def signal_handler(sig, frame):
 
 
 def main():
-    uvloop.install()
     parse_command_line()
-    ioloop = tornado.ioloop.IOLoop.current()
     ioloop.run_sync(dbpool.make_pool)
     app.pool = dbpool.pool
     app.listen(options.port)

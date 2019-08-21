@@ -2,6 +2,7 @@
 # __author__ = 'Mio'
 
 import asyncpg
+from asyncpg.pool import Pool
 from redis import Redis
 
 
@@ -16,7 +17,7 @@ class DBPool:
         return cls._instance
 
     @property
-    def pool(self):
+    def pool(self) -> Pool:
         return self._instance
 
 
