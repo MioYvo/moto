@@ -90,6 +90,7 @@ class Tenant:
         if not target_n:
             target_n = client.networks.create(name=self.network_name)
             self.network_id = target_n.id
+            self.network_name = target_n.name
         return target_n
 
     @classmethod
@@ -161,6 +162,7 @@ class Tenant:
             mounts=self.mounts,
             log_config=self.log_config,
             mem_limit='100m',
+            labels={"traefik.frontend.rule": "Host:", "traefik.docker.network": self.network_name},
             **self.cpu_limit(cpus=1)
         )
         container_kwargs.update(**kwargs)
@@ -169,11 +171,17 @@ class Tenant:
             client.containers.run(
                 **container_kwargs
             )
+            self.reverse_proxy()
         except Exception as e:
             print(e)
             logging.error(e)
         else:
             print('done')
+
+    def reverse_proxy(self):
+        for c in client.containers.list():
+            if c.name == "traefik_reverse-proxy_1":
+                self.network.connect(c)
 
     def start(self):
         self.prepare_network()
