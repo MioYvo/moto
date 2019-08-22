@@ -3,8 +3,8 @@
 if [[ ! -d /var/www/html/wp-admin ]]; then
 	echo "WordPress is missing, installing now."
 	cp -R /usr/src/wordpress/* /var/www/html
-
-	if [ "$WORDPRESS_DB_NAME" ] && [ "$WORDPRESS_DB_USER" ] && [ "$WORDPRESS_DB_PASSWORD" ] && [ "$WORDPRESS_DB_HOST" ]; then
+    # TODO use wp-config.php.tml
+	if [[ "$WORDPRESS_DB_NAME" ]] && [[ "$WORDPRESS_DB_USER" ]] && [[ "$WORDPRESS_DB_PASSWORD" ]] && [[ "$WORDPRESS_DB_HOST" ]]; then
 		mv /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
 		sed -i "s/database_name_here/$WORDPRESS_DB_NAME/g" /var/www/html/wp-config.php
 		sed -i "s/username_here/$WORDPRESS_DB_USER/g" /var/www/html/wp-config.php
@@ -16,18 +16,12 @@ if [[ ! -d /var/www/html/wp-admin ]]; then
 	fi
 fi
 
-if [[ -d /demyx ]]; then
-    rm /etc/nginx/nginx.conf
-    rm /etc/php7/php.ini
-    rm /etc/php7/php-fpm.d/www.conf
-    ln -s /demyx/nginx.conf /etc/nginx
-    ln -s /demyx/php.ini /etc/php7
-    ln -s /demyx/php-fpm.conf /etc/php7/php-fpm.d
-fi
 
 find /var/www/html -type d -print0 | xargs -0 chmod 0755
 find /var/www/html -type f -print0 | xargs -0 chmod 0644
 chown -R www-data:www-data /var/www/html
+# TODO use nginx.conf.tml
+sed -i "s/LISTEN_PORT/$LISTEN_PORT/g" /etc/nginx/nginx.conf
 
 php-fpm -D
 nginx -g 'daemon off;'

@@ -1,6 +1,7 @@
 # coding=utf-8
 # __author__ = 'Mio'
 import logging
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
@@ -12,7 +13,6 @@ from docker.models.images import Image
 from docker.models.networks import Network
 from docker.types import Mount
 
-from Manager.model.tenant import TenantTable
 from Manager.settings import DATA_PATH_PREFIX
 
 client = docker.from_env()
@@ -31,7 +31,7 @@ def real_path(p: Path) -> str:
 class Tenant:
     user_name: str
     user_id: int
-    network_id: int = None
+    network_id: str = ''
     image: Image = client.images.get('mio-wp')
 
     def __post_init__(self):
@@ -43,10 +43,17 @@ class Tenant:
         self.container_name = f"{self.user_id}-wp"
         self.db_container_name = f'{self.user_id}-db'
         self.redis_container_name = f'{self.user_id}-redis'
-        self.default_network_name = f"{self.user_id}-net"
+        self.network_name = f"{self.user_id}-net"
         # container start kwargs
         self.log_config = {'config': {'max-file': '1', 'max-size': '10m'}}
-        self.mounts = [
+
+    @property
+    def network(self):
+        return self.prepare_network()
+
+    @property
+    def mounts(self):
+        return [
             Mount(
                 type='bind',
                 source=real_path(self.wp_path),
@@ -54,48 +61,54 @@ class Tenant:
             ),
         ]
 
-    @classmethod
-    async def get_or_create(cls, user_id, user_name=None, network_id=None):
-        m = await TenantTable.get_by_user_id(user_id)
-        if m:
-            return cls(user_id=m['user_id'], user_name=m['user_name'], network_id=m['network_id'])
-        else:
-            return cls(user_id=user_id, user_name=user_name, network_id=network_id)
-
-    async def update_table(self):
-        await TenantTable.new(user_id=self.user_id, user_name=self.user_name, network_id=self.network_id)
-
-    async def network(self) -> Network:
-        return await self.prepare_network()
-
-    async def prepare_network(self) -> Network:
-        if self.network_id:
+    def prepare_network(self, force=False) -> Network:
+        if not force and self.network_id:
             try:
                 return client.networks.get(network_id=self.network_id)
             except (docker.errors.NotFound, docker.errors.APIError) as e:
                 logging.error(e)
-
-        n = client.networks.create(name=self.default_network_name)
-        self.network_id = n.id
-        await self.update_table()
-        return n
+                print('network_id go wrong, try to get a exists or create a new one')
+        # got exists network named '{self.network_name}'
+        # if duplicate name networks exists, return first got, remove rest of them
+        target_n = None
+        duplicated = False
+        for n in client.networks.list():
+            if n.name == self.network_name:
+                if duplicated is True:
+                    try:
+                        n.remove()
+                    except Exception as e:
+                        print(e)
+                else:
+                    self.network_id = n.id
+                    target_n = n
+                    duplicated = True
+            else:
+                if duplicated is True:
+                    break
+        # create new one
+        if not target_n:
+            target_n = client.networks.create(name=self.network_name)
+            self.network_id = target_n.id
+        return target_n
 
     @classmethod
     def cpu_limit(cls, cpus=1) -> dict:
         return dict(cpu_period=CPU1_PERIOD, cpu_quota=cpus * CPU1_QUOTA)
 
-    def prepare_redis_container(self):
+    def prepare_redis_container(self, **kwargs):
         container_kwargs = dict(
             image=client.images.get('redis'),
             name=self.redis_container_name,
             detach=True,
-            network=self.default_network_name,
+            network=self.network_name,
             log_config={'config': {'max-file': '1', 'max-size': '10m'}},
             mem_limit='100m',
             **self.cpu_limit(cpus=1),
         )
+        container_kwargs.update(kwargs)
         try:
-            print(f"starting {container_kwargs['name']}")
+            print(f"starting {container_kwargs['name']}", end='...')
             client.containers.run(**container_kwargs)
         except Exception as e:
             print(e)
@@ -103,7 +116,7 @@ class Tenant:
         else:
             print('done')
 
-    def prepare_db_container(self):
+    def prepare_db_container(self, **kwargs):
         container_kwargs = dict(
             image=client.images.get("mariadb"),
             name=self.db_container_name,
@@ -112,7 +125,7 @@ class Tenant:
                 'MYSQL_ROOT_PASSWORD': 'root',
                 'MYSQL_DATABASE': 'wp',
             },
-            network=self.default_network_name,
+            network=self.network_name,
             mounts=[Mount(
                 type='bind',
                 source=real_path(self.db_path),
@@ -121,9 +134,11 @@ class Tenant:
             log_config={'config': {'max-file': '1', 'max-size': '10m'}},
             mem_limit='100m',
             **self.cpu_limit(cpus=1),
+            **kwargs,
         )
+        container_kwargs.update(kwargs)
         try:
-            print(f"starting {container_kwargs['name']}")
+            print(f"starting {container_kwargs['name']}", end='...')
             client.containers.run(**container_kwargs)
         except Exception as e:
             print(e)
@@ -131,27 +146,37 @@ class Tenant:
         else:
             print('done')
 
-    def prepare_container(self):
+    def prepare_container(self, **kwargs):
+        container_kwargs = dict(
+            image=self.image,
+            name=self.container_name,
+            detach=True,
+            environment={
+                'WORDPRESS_DB_NAME': 'wp',
+                'WORDPRESS_DB_USER': 'root',
+                'WORDPRESS_DB_PASSWORD': 'root',
+                'WORDPRESS_DB_HOST': self.db_container_name
+            },
+            network=self.network_name,
+            mounts=self.mounts,
+            log_config=self.log_config,
+            mem_limit='100m',
+            **self.cpu_limit(cpus=1)
+        )
+        container_kwargs.update(**kwargs)
         try:
+            print(f"starting {self.container_name}", end='...')
             client.containers.run(
-                image=self.image,
-                name=self.container_name,
-                detach=True,
-                environment={
-                    'WORDPRESS_DB_NAME': 'wp',
-                    'WORDPRESS_DB_USER': 'root',
-                    'WORDPRESS_DB_PASSWORD': 'root',
-                    'WORDPRESS_DB_HOST': 'maria'
-                },
-                mounts=self.mounts,
-                log_config=self.log_config,
-                **self.cpu_limit(cpus=1)
+                **container_kwargs
             )
         except Exception as e:
             print(e)
             logging.error(e)
+        else:
+            print('done')
 
     def start(self):
+        self.prepare_network()
         self.prepare_db_container()
         self.prepare_redis_container()
         self.prepare_container()
@@ -207,3 +232,12 @@ class Tenant:
                 except Exception as e:
                     print(e.args)
                     pass
+
+    def prune(self, db=False):
+        self.remove()
+        if self.wp_path.exists():
+            shutil.rmtree(self.wp_path)
+        if db and self.db_path.exists():
+            shutil.rmtree(self.db_path)
+        self.network.remove()
+        self.network_id = ''

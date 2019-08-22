@@ -14,8 +14,9 @@ ENV NGX_CACHE_PURGE_VERSION 2.3
 ENV HEADERS_MORE_NGINX_MODULE_VERSION 0.33
 ENV WORDPRESS_VERSION 5.2.2
 ENV WORDPRESS_SHA1 3605bcbe9ea48d714efa59b0eb2d251657e7d5b0
+ENV LISTEN_PORT = 80
 
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories \
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
     && set -x \
 # create nginx user/group first, to be consistent throughout docker variants
     && addgroup -g 101 -S nginx \
@@ -188,6 +189,7 @@ RUN set -ex; \
 	php7-openssl \
     php7-pecl-mcrypt \
     php7-pecl-ssh2 \
+    php7-pecl-redis \
     php7-phar \
 	php7-posix \
     php7-session \
@@ -222,6 +224,7 @@ RUN set -ex; \
 COPY common /etc/nginx/common
 COPY cache /etc/nginx/cache
 COPY demyx-entrypoint.sh /usr/local/bin/demyx-entrypoint
+#TODO use nginx.conf.tml
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY php.ini /etc/php7/php.ini
 COPY www.conf /etc/php7/php-fpm.d/www.conf
