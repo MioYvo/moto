@@ -14,7 +14,7 @@ ENV NGX_CACHE_PURGE_VERSION 2.3
 ENV HEADERS_MORE_NGINX_MODULE_VERSION 0.33
 ENV WORDPRESS_VERSION 5.2.2
 ENV WORDPRESS_SHA1 3605bcbe9ea48d714efa59b0eb2d251657e7d5b0
-ENV LISTEN_PORT = 80
+ENV LISTEN_PORT 80
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
     && set -x \

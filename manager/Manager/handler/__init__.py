@@ -5,7 +5,7 @@ import uuid
 import ujson as json
 import tornado.web
 
-from Manager.model.user import User
+from Manager.model.tenant import Tenant
 from Manager.utils.web import BaseRequestHandler
 
 from cryptography import fernet
@@ -39,12 +39,12 @@ class LoginHandler(BaseRequestHandler):
                    '<input type="submit" value="password">'
                    '</form></body></html>')
 
-    async def post(self):
+    def post(self):
         password = self.get_body_argument('password')
         name = self.get_body_argument('name')
         password_hashed = hashlib.sha256(bytes(password, 'utf8')).hexdigest()
-        user = await User.get_by_name(name)
-        if user['password'] == password_hashed:
+        user = Tenant.get_by_name(name)
+        if user and user == password_hashed:
             token = f.encrypt(json.dumps(dict(user)).encode())
             self.set_header('token', token)
             self.redirect("/")

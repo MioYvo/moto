@@ -7,10 +7,8 @@ from pathlib import Path
 import tornado.escape
 import tornado.ioloop
 import tornado.web
-import uvloop
 from tornado.options import define, options, parse_command_line
 
-from Manager.model import DBPool, dbpool
 from Manager.settings import ioloop
 from Manager.urls import urls
 
@@ -57,8 +55,8 @@ def signal_handler(sig, frame):
 
 def main():
     parse_command_line()
-    ioloop.run_sync(dbpool.make_pool)
-    app.pool = dbpool.pool
+    # ioloop.run_sync(dbpool.make_pool)
+    # app.pool = dbpool.pool
     app.listen(options.port)
     logging.info(f"App run on: http://localhost:{options.port}")
     signal.signal(signal.SIGTERM, signal_handler)
