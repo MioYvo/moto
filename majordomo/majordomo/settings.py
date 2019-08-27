@@ -1,6 +1,7 @@
 # coding=utf-8
 # __author__ = 'Mio'
 from os import getenv
+from pathlib import Path
 
 import docker
 import tornado.ioloop
@@ -15,7 +16,7 @@ LOG_MAX_FILE = getenv('LOG_MAX_FILE', '1')
 LOG_MAX_SIZE = getenv('LOG_MAX_SIZE', '10m')
 REVERSE_PROXY_CONTAINER_NAME = getenv('REVERSE_PROXY_CONTAINER_NAME', 'traefik')
 COMMON_DB_CONTAINER_NAME = getenv('COMMON_DB_CONTAINER_NAME', 'maria')
-COMMON_DB_DATA_PATH = getenv('COMMON_DB_DATA_PATH', '/data/maria')
+COMMON_DB_DATA_PATH = Path(getenv('COMMON_DB_DATA_PATH', '/data/maria'))
 # TODO use docker secret
 COMMON_DB_PW = getenv('COMMON_DB_PW', 'root')
 # Database(PG) for moto

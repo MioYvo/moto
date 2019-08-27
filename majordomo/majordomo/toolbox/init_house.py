@@ -22,3 +22,11 @@ def init_maria() -> Container:
         environment=dict(MYSQL_ROOT_PASSWORD=COMMON_DB_PW),
         detach=True
     )
+
+
+def init_pg() -> Container:
+    """
+    docker run --name pg -p 5432:5432 -e POSTGRES_PASSWORD=postgres -d postgres:alpine
+    :return:
+    """
+    pass
