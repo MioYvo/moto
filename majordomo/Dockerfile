@@ -1,8 +1,8 @@
 FROM python:alpine
 
 ENV TZ America/Los_Angeles
-ADD . /manager
-WORKDIR /manager/
+ADD . /majordomo
+WORKDIR /majordomo/
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories \
     && set -x \
 
