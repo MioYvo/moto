@@ -29,13 +29,13 @@ class UploadHandler(ApiHandler):
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(data.body)
             try:
-                shutil.unpack_archive(fp.name, pathlib.Path('/Users/mio/Life/moto/target'), format=data.filename.rsplit('.', 1)[-1])
+                shutil.unpack_archive(fp.name, pathlib.Path('/Users/moto/Life/moto/target'), format=data.filename.rsplit('.', 1)[-1])
             except ValueError as e:
                 app_log.error(e)
                 self.write_error_response(str(e), ERR_ARG)
                 return
             else:
-                print(pathlib.Path('/Users/mio/Life/moto/target').exists())
+                print(pathlib.Path('/Users/moto/Life/moto/target').exists())
             # zf.extractall()
 
 

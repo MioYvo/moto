@@ -12,8 +12,7 @@ from sqlalchemy import Column, Integer, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 
 # from majordomo.settings import DB_PASSWORD, DB_USER, DB_DATABASE, DB_HOST
-from majordomo.settings import session_factory as _session_factory
-
+from majordomo.settings import session_factory as _session_factory, engine
 
 # class DBPool:
 #     _instance = None
@@ -68,3 +67,4 @@ class TimestampModel(object):
 
 
 Base = declarative_base(cls=TimestampModel)
+Base.metadata.create_all(engine)

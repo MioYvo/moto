@@ -21,7 +21,7 @@ from majordomo.model import make_session
 from majordomo.settings import (
     DATA_PATH_PREFIX, REVERSE_PROXY_CONTAINER_NAME, LOG_MAX_SIZE, LOG_MAX_FILE,
     COMMON_DB_CONTAINER_NAME, COMMON_DB_PW,
-    client)
+    client, WP_IMAGE_NAME)
 from majordomo.model.tenant import Tenant as TenantTable
 from majordomo.utils import real_path
 
@@ -36,7 +36,7 @@ class Tenant:
     host: str = ''
     network_id: str = ''
     mysql_pw: str = ''
-    image: Image = client.images.get('mio-wp')
+    image: Image = client.images.get(WP_IMAGE_NAME)
 
     def __post_init__(self):
         # path
@@ -262,7 +262,7 @@ class Tenant:
         """
 
         sql_grant_user = f"""
-        grant Select,Insert,References,Update,Delete,Create,Drop,Index,Alter
+        grant Select,Insert,References,Update,Delete,Create,Drop,Index,Alter,CREATE
         on {self.common_db_name_by_user}.* to {self.common_db_user_name}@'%' identified by '{self.mysql_pw}';
         """
 

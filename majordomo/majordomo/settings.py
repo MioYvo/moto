@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 
 # Container
 DATA_PATH_PREFIX = getenv('DATA_PATH_PREFIX', '/data')
-WP_IMAGE_NAME = getenv('WP_IMAGE_NAME', 'mio-wp')
+WP_IMAGE_NAME = getenv('WP_IMAGE_NAME', 'ccr.ccs.tencentyun.com/mioo/wp:latest')
 LOG_MAX_FILE = getenv('LOG_MAX_FILE', '1')
 LOG_MAX_SIZE = getenv('LOG_MAX_SIZE', '10m')
 REVERSE_PROXY_CONTAINER_NAME = getenv('REVERSE_PROXY_CONTAINER_NAME', 'traefik')

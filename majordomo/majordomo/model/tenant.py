@@ -2,7 +2,7 @@
 # __author__ = 'Mio'
 from sqlalchemy import Column, Integer, String, Sequence
 
-from majordomo.model import Base, make_session
+from majordomo.model import Base
 # from majordomo.model import dbpool as db, pool
 
 
