@@ -13,7 +13,7 @@ DATA_PATH_PREFIX = getenv('DATA_PATH_PREFIX', '/data')
 WP_IMAGE_NAME = getenv('WP_IMAGE_NAME', 'mio-wp')
 LOG_MAX_FILE = getenv('LOG_MAX_FILE', '1')
 LOG_MAX_SIZE = getenv('LOG_MAX_SIZE', '10m')
-REVERSE_PROXY_CONTAINER_NAME = getenv('REVERSE_PROXY_CONTAINER_NAME', 'traefik_reverse-proxy_1')
+REVERSE_PROXY_CONTAINER_NAME = getenv('REVERSE_PROXY_CONTAINER_NAME', 'traefik')
 COMMON_DB_CONTAINER_NAME = getenv('COMMON_DB_CONTAINER_NAME', 'maria')
 COMMON_DB_DATA_PATH = getenv('COMMON_DB_DATA_PATH', '/data/maria')
 # TODO use docker secret

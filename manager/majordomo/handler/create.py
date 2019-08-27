@@ -7,8 +7,8 @@ import pathlib
 from tornado.log import app_log
 from tornado.web import authenticated
 
-from Manager.handler import ApiHandler
-from Manager.utils.error_code import ERR_ARG
+from majordomo.handler import ApiHandler
+from majordomo.utils.error_code import ERR_ARG
 
 
 class UploadHandler(ApiHandler):

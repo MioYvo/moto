@@ -16,14 +16,14 @@ from docker.models.images import Image
 from docker.models.networks import Network
 from docker.types import Mount
 
-from Manager.majordomo.init_house import init_maria
-from Manager.model import make_session
-from Manager.settings import (
+from majordomo.toolbox.init_house import init_maria
+from majordomo.model import make_session
+from majordomo.settings import (
     DATA_PATH_PREFIX, REVERSE_PROXY_CONTAINER_NAME, LOG_MAX_SIZE, LOG_MAX_FILE,
     COMMON_DB_CONTAINER_NAME, COMMON_DB_PW,
     client)
-from Manager.model.tenant import Tenant as TenantTable
-from Manager.utils import real_path
+from majordomo.model.tenant import Tenant as TenantTable
+from majordomo.utils import real_path
 
 CPU1_PERIOD = 100000
 CPU1_QUOTA = 100000
@@ -44,10 +44,10 @@ class Tenant:
         self.wp_path = self.user_path / 'wp'
         self.db_path = self.user_path / 'db'
         # container
-        self.container_name = f"{self.user_id}-wp"
-        self.db_container_name = f'{self.user_id}-db'
-        self.redis_container_name = f'{self.user_id}-redis'
-        self.network_name = f"{self.user_id}-net"
+        self.container_name = f"wp-{self.user_id}"
+        self.db_container_name = f'db-{self.user_id}'
+        self.redis_container_name = f'redis-{self.user_id}'
+        self.network_name = f"net-{self.user_id}"
         self.reverse_proxy_container_name = REVERSE_PROXY_CONTAINER_NAME
         # common db
         self.common_db_container_name = COMMON_DB_CONTAINER_NAME
@@ -180,6 +180,8 @@ class Tenant:
     def prepare_container(self, **kwargs):
         labels = {
             "traefik.docker.network": self.network_name,
+            "traefik.enable": "true",
+            "traefik.port": "80"
         }
         if self.host:
             labels["traefik.frontend.rule"] = f"Host:{self.host}"
@@ -223,14 +225,10 @@ class Tenant:
         put the reverse_proxy container to user's private network
         """
         if self.reverse_proxy_container_name not in (c.name for c in self.network.containers):
-            for c in client.containers.list():
-                if c.name == self.reverse_proxy_container_name:
-                    try:
-                        self.network.connect(c)
-                    except Exception as e:
-                        print(e)
-
-                    break
+            try:
+                self.network.connect(self.reverse_proxy_container_name)
+            except Exception as e:
+                print(e)
 
     def generate_pw(self, length=12):
         return ''.join(
@@ -256,9 +254,7 @@ class Tenant:
             self.mysql_pw = self.generate_pw()
 
         sql_create_user = f"""
-        CREATE USER IF NOT EXISTS '{self.common_db_user_name}' IDENTIFIED BY '{self.mysql_pw}'
-        WITH MAX_CONNECTIONS_PER_HOUR 200
-        MAX_USER_CONNECTIONS 50;
+        CREATE USER IF NOT EXISTS '{self.common_db_user_name}' IDENTIFIED BY '{self.mysql_pw}';
         """
 
         sql_create_db = f"""
@@ -276,6 +272,12 @@ class Tenant:
         sql = f"""mysql -uroot -p{self.common_db_root_pw} -e \"{sql}\""""
 
         print(self.common_db_container.exec_run(cmd=sql, demux=True))
+
+        try:
+            self.network.connect(self.common_db_container.id)
+        except Exception as e:
+            print(e)
+
         self.update_db_record()
         self.update_wp_config()
 
@@ -391,3 +393,11 @@ class Tenant:
             self.drop_common_db_user()
 
         self.update_db_record()
+
+    def clear_wfc_cache(self):
+        print(client.containers.run(
+            image="wordpress:cli",
+            command="wp fastest-cache clear all",
+            volumes_from=[self.container_name],
+            network=self.network_name
+        ))

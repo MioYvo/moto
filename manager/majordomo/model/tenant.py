@@ -2,8 +2,8 @@
 # __author__ = 'Mio'
 from sqlalchemy import Column, Integer, String, Sequence
 
-from Manager.model import Base, make_session
-# from Manager.model import dbpool as db, pool
+from majordomo.model import Base, make_session
+# from majordomo.model import dbpool as db, pool
 
 
 # noinspection PyShadowingBuiltins
@@ -19,10 +19,6 @@ class Tenant(Base):
     def __repr__(self):
         return f"<Tenant(user_id={self.user_id},name={self.user_name})>"
 
-    @classmethod
-    def get_by_name(cls, name):
-        with make_session() as s:
-            return s.query(cls).filter_by(name=name).first()
     # @classmethod
     # async def async_new(cls, user_id, user_name, network_id=None) -> str:
     #     """

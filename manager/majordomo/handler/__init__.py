@@ -5,8 +5,9 @@ import uuid
 import ujson as json
 import tornado.web
 
-from Manager.model.tenant import Tenant
-from Manager.utils.web import BaseRequestHandler
+from majordomo.model import make_session
+from majordomo.model.tenant import Tenant
+from majordomo.utils.web import BaseRequestHandler
 
 from cryptography import fernet
 
@@ -43,10 +44,11 @@ class LoginHandler(BaseRequestHandler):
         password = self.get_body_argument('password')
         name = self.get_body_argument('name')
         password_hashed = hashlib.sha256(bytes(password, 'utf8')).hexdigest()
-        user = Tenant.get_by_name(name)
-        if user and user == password_hashed:
-            token = f.encrypt(json.dumps(dict(user)).encode())
-            self.set_header('token', token)
-            self.redirect("/")
-        else:
-            raise tornado.web.HTTPError(403)
+        with make_session() as s:
+            user = s.query(Tenant).filter_by(user_name=name).first()
+            if user and user.password == password_hashed:
+                token = f.encrypt(json.dumps(user.id).encode())
+                self.set_header('token', token)
+                self.redirect("/")
+            else:
+                raise tornado.web.HTTPError(403)

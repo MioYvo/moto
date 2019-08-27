@@ -9,8 +9,8 @@ import tornado.ioloop
 import tornado.web
 from tornado.options import define, options, parse_command_line
 
-from Manager.settings import ioloop
-from Manager.urls import urls
+from majordomo.settings import ioloop
+from majordomo.urls import urls
 
 define("port", default=8888, help="run on the given port", type=int)
 define("debug", default=False, help="run in debug mode")

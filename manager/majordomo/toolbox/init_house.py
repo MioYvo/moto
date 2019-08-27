@@ -3,8 +3,8 @@
 from docker.models.containers import Container
 from docker.types import Mount
 
-from Manager.settings import client, COMMON_DB_CONTAINER_NAME, COMMON_DB_DATA_PATH, COMMON_DB_PW
-from Manager.utils import real_path
+from majordomo.settings import client, COMMON_DB_CONTAINER_NAME, COMMON_DB_DATA_PATH, COMMON_DB_PW
+from majordomo.utils import real_path
 
 
 def init_maria() -> Container:
